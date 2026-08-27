@@ -1,0 +1,1434 @@
+:root {
+  --bg: #14181f;
+  --bg-pool: radial-gradient(ellipse at 50% 0%, #1b2230 0%, #10131a 70%);
+  --panel: #1c2330;
+  --panel-border: #2e3a4f;
+  --text: #e8ecf3;
+  --text-dim: #8ea0b8;
+  --accent: #e8b64c;
+  --accent-dim: #8a6c26;
+  --consonant: #3a4a63;
+  --consonant-face: #4a5d7a;
+  --vowel: #b5442e;
+  --vowel-face: #d1573d;
+  --bigram: #2a6b5e;
+  --bigram-face: #35876f;
+  --match: #3fae5c;
+  --close: #d99b2b;
+  --radius: 10px;
+  --piece-scale: 1;
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  height: 100%;
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  overflow: hidden;
+}
+
+#app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+}
+
+main {
+  flex: 1;
+  display: flex;
+  flex-direction: row;
+  min-height: 0;
+}
+
+#playArea {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  min-width: 0;
+}
+
+#gottenSidebar {
+  width: 220px;
+  flex: none;
+  background: var(--panel);
+  border-right: 1px solid var(--panel-border);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+#gottenSidebar .panel-header { margin-bottom: 8px; }
+#gottenSidebar h3 {
+  margin: 0;
+  font-size: 13px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--accent);
+}
+#gottenSidebar h3 span { color: var(--text-dim); font-weight: 400; }
+#clearSpellbookBtn {
+  background: #26314a;
+  color: var(--text-dim);
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 3px 8px;
+  font-size: 11px;
+  cursor: pointer;
+  flex: none;
+}
+#clearSpellbookBtn:hover { background: #3a2626; color: #ff9a9a; }
+#gottenList {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  /* Grows to fill the sidebar, pushing Cantrips down to the bottom instead
+     of sitting right beneath a short list. */
+  flex: 1;
+  min-height: 0;
+}
+#gottenList li {
+  background: #141a26;
+  border: 1px solid var(--panel-border);
+  border-left: 3px solid var(--match);
+  border-radius: 5px;
+  padding: 6px 9px;
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  animation: gottenIn .3s ease;
+}
+#gottenList li.close-tag { border-left-color: var(--close); }
+#gottenList li .row { display: flex; justify-content: space-between; align-items: center; }
+#gottenList li .word { flex: 1; }
+#gottenList li .tag {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  color: var(--text-dim);
+  margin-left: 6px;
+}
+@keyframes gottenIn {
+  from { opacity: 0; transform: translateX(12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+/* Empty spellbook rows, padding the list out to a minimum size so it reads
+   as a bigger book gradually filling in - same idea as the dashed empty
+   cantrip slots, just shaped for a word-list row. */
+#gottenList li.gotten-empty-slot {
+  min-height: 20px;
+  background: none;
+  border: 1px dashed var(--panel-border);
+  border-left: 1px dashed var(--panel-border);
+  padding: 6px 9px;
+  font-weight: 400;
+  animation: none;
+}
+
+/* ---------- Match celebration ---------- */
+
+.celebrate-banner {
+  position: fixed;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.6);
+  z-index: 900;
+  padding: 22px 48px;
+  border-radius: 16px;
+  font-size: 40px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  text-align: center;
+  color: #fff;
+  pointer-events: none;
+  box-shadow: 0 20px 60px rgba(0,0,0,0.5);
+  animation: celebratePop 1.3s cubic-bezier(.2,1.4,.4,1) forwards;
+}
+.celebrate-banner .sub {
+  display: block;
+  font-size: 15px;
+  font-weight: 600;
+  opacity: 0.85;
+  margin-top: 6px;
+  letter-spacing: 0.08em;
+}
+.celebrate-banner.exact { background: linear-gradient(160deg, #4fd374, var(--match)); }
+.celebrate-banner.close { background: linear-gradient(160deg, #f0b545, var(--close)); }
+.celebrate-banner.dict { background: linear-gradient(160deg, #a6b4ff, #6a7fd1); }
+@keyframes celebratePop {
+  0%   { opacity: 0; transform: translate(-50%, -50%) scale(0.5) rotate(-4deg); }
+  15%  { opacity: 1; transform: translate(-50%, -50%) scale(1.15) rotate(2deg); }
+  25%  { transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  80%  { opacity: 1; transform: translate(-50%, -50%) scale(1) rotate(0deg); }
+  100% { opacity: 0; transform: translate(-50%, -50%) scale(0.92) rotate(0deg); }
+}
+
+#errorBanner {
+  background: #5c1c1c;
+  color: #ffd7d7;
+  font: 12px/1.5 monospace;
+  padding: 8px 14px;
+  white-space: pre-wrap;
+  max-height: 30vh;
+  overflow-y: auto;
+  border-bottom: 2px solid #ff5c5c;
+}
+#errorBanner.hidden { display: none; }
+
+/* ---------- Controls ---------- */
+
+#controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 18px;
+  padding: 10px 16px;
+  background: var(--panel);
+  border-bottom: 1px solid var(--panel-border);
+  z-index: 50;
+}
+
+/* Minimized (auto-applied entering Game mode, toggleable any time): only
+   the Mode switch and the toggle button itself stay, everything else -
+   piece/frequency tuning, sliders, actions - collapses away so the game
+   area gets the vertical space instead. */
+#controls.minimized {
+  padding: 6px 16px;
+  gap: 10px;
+}
+#controls.minimized .control-group:not(.mode-group) { display: none; }
+
+.controls-toggle-btn {
+  align-self: center;
+  background: #26314a;
+  color: var(--text-dim);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 6px 12px;
+  font-size: 12px;
+  cursor: pointer;
+}
+.controls-toggle-btn:hover { background: #303e5c; color: var(--text); }
+
+.control-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.control-group > label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+}
+
+.segmented {
+  display: flex;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.segmented button {
+  background: transparent;
+  color: var(--text-dim);
+  border: none;
+  padding: 6px 10px;
+  font-size: 13px;
+  cursor: pointer;
+  border-right: 1px solid var(--panel-border);
+  white-space: nowrap;
+}
+
+.segmented button:last-child { border-right: none; }
+
+.segmented button:hover { background: #26314530; color: var(--text); }
+
+.segmented button.active {
+  background: var(--accent-dim);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.slider-group input[type="range"] {
+  width: 140px;
+  accent-color: var(--accent);
+}
+
+.toggle-group {
+  flex-direction: row;
+  align-items: center;
+  gap: 8px;
+}
+
+.switch-label { font-size: 12px; color: var(--text-dim); max-width: 180px; }
+
+.switch {
+  position: relative;
+  display: inline-block;
+  width: 38px;
+  height: 20px;
+  flex: none;
+}
+.switch input { opacity: 0; width: 0; height: 0; }
+.slider-toggle {
+  position: absolute; cursor: pointer; inset: 0;
+  background: #33405a; border-radius: 20px; transition: background .15s;
+}
+.slider-toggle::before {
+  content: ""; position: absolute; height: 14px; width: 14px; left: 3px; top: 3px;
+  background: white; border-radius: 50%; transition: transform .15s;
+}
+.switch input:checked + .slider-toggle { background: var(--accent-dim); }
+.switch input:checked + .slider-toggle::before { transform: translateX(18px); background: var(--accent); }
+
+.actions { flex-direction: row; gap: 8px; }
+
+.add-word-row { display: flex; gap: 4px; }
+#addWordInput {
+  width: 120px;
+  background: #141a26;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  color: var(--text);
+  font-size: 13px;
+  padding: 7px 9px;
+}
+#addWordInput:focus { outline: 1px solid var(--accent); }
+#addWordMsg {
+  font-size: 11px;
+  min-height: 14px;
+  margin-top: 2px;
+}
+#addWordMsg.ok { color: var(--match); }
+#addWordMsg.err { color: #ff8f8f; }
+
+button {
+  font-family: inherit;
+}
+
+.actions button, #closePanelBtn, #addWordBtn {
+  background: #26314a;
+  color: var(--text);
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 8px 14px;
+  font-size: 13px;
+  cursor: pointer;
+}
+.actions button:hover, #addWordBtn:hover { background: #303e5c; }
+.actions button:disabled, #addWordBtn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+.actions button.primary {
+  background: var(--accent-dim);
+  color: #1a1400;
+  font-weight: 700;
+  border-color: var(--accent-dim);
+}
+.actions button.primary:hover { background: var(--accent); }
+
+/* ---------- Rack ---------- */
+
+#rackZone {
+  display: flex;
+  align-items: flex-start;
+  gap: 14px;
+  /* Extra bottom padding so the rack-controls (swap/flip/turn), which sit
+     20px+ below each piece via absolute positioning, stay fully inside
+     this section instead of being painted over by the game-piece area
+     that starts right after it. */
+  padding: 6px 16px 34px;
+  background: linear-gradient(#191f2b, #14181f);
+  border-bottom: 1px solid var(--panel-border);
+  min-height: 56px;
+}
+
+#rackMain { flex: 1; min-width: 0; margin-left: 6px; }
+
+#closeWordsReel {
+  flex: none;
+  width: 190px;
+  background: #141a26;
+  border: 1px solid var(--close);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+#closeWordsReel.hidden { display: none; }
+.reel-title {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--close);
+  font-weight: 700;
+  margin-bottom: 4px;
+}
+#closeWordsReelList {
+  max-height: 76px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.reel-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #1c2434;
+  border-radius: 5px;
+  padding: 3px 6px;
+  font-size: 12px;
+  font-weight: 600;
+  gap: 6px;
+}
+.reel-row button {
+  background: linear-gradient(160deg, #f0b545, var(--close));
+  color: #2a1900;
+  border: none;
+  border-radius: 10px;
+  padding: 2px 8px;
+  font-size: 10px;
+  font-weight: 700;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.reel-row button:disabled { background: #33405a; color: var(--text-dim); cursor: not-allowed; }
+
+#rackStatus {
+  font-size: 13px;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  min-height: 18px;
+}
+#rackStatus.match { color: var(--match); font-weight: 700; }
+#rackStatus.close { color: var(--close); font-weight: 700; }
+
+#matchChoices {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+#matchChoices:empty { margin-bottom: 0; }
+.match-pill {
+  background: linear-gradient(160deg, #4fd374, var(--match));
+  color: #06210f;
+  border: none;
+  border-radius: 20px;
+  padding: 5px 12px;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+}
+.match-pill.close { background: linear-gradient(160deg, #f0b545, var(--close)); color: #2a1900; }
+.match-pill span { opacity: 0.75; font-weight: 600; text-transform: none; }
+.match-pill.banked { background: #33405a; color: var(--text-dim); cursor: default; }
+.match-pill:not(.banked):hover { filter: brightness(1.1); transform: translateY(-1px); }
+
+#rack {
+  display: flex;
+  gap: 6px;
+  min-height: 78px;
+  padding: 4px;
+  border-radius: var(--radius);
+  transition: background .15s;
+}
+#rack.match { background: #1c3323; box-shadow: 0 0 0 2px var(--match) inset; }
+#rack.close { background: #33290f; box-shadow: 0 0 0 2px var(--close) inset; }
+
+.rack-unit {
+  display: flex;
+  align-items: center;
+  position: relative;
+}
+.rack-unit.dragging { opacity: 0.35; }
+
+.rack-slot {
+  width: calc(44px * var(--piece-scale));
+  height: calc(54px * var(--piece-scale));
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(22px * var(--piece-scale));
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  color: #fff;
+  cursor: grab;
+  user-select: none;
+  position: relative;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.35), 0 4px 6px rgba(0,0,0,0.3);
+}
+.rack-slot.consonant { background: linear-gradient(160deg, var(--consonant-face), var(--consonant)); }
+.rack-slot.vowel { background: linear-gradient(160deg, var(--vowel-face), var(--vowel)); }
+
+@keyframes wildTextShift {
+  0%   { color: #ff6b6b; }
+  16%  { color: #ffb545; }
+  33%  { color: #f5e34f; }
+  50%  { color: #62e884; }
+  66%  { color: #55c8f0; }
+  83%  { color: #b98cf5; }
+  100% { color: #ff6b6b; }
+}
+.wild-text {
+  /* Sized relative to the inherited font-size (which already scales per
+     face type and --piece-scale), so a wild glyph dominates whichever face
+     it's on - die, tile, domino half, or rack slot - clearly different
+     from a normal same-size letter at a glance. */
+  display: inline-block;
+  font-size: 2.4em;
+  line-height: 1;
+  animation: wildTextShift 2s linear infinite;
+  text-shadow: 0 0 6px currentColor;
+}
+.rack-slot.bigram { background: linear-gradient(160deg, var(--bigram-face), var(--bigram)); font-size: calc(18px * var(--piece-scale)); }
+
+.rack-controls {
+  position: absolute;
+  bottom: -20px;
+  left: 0; right: 0;
+  display: flex;
+  justify-content: center;
+  gap: 3px;
+}
+.rack-controls button {
+  background: #0006;
+  border: 1px solid #ffffff22;
+  color: var(--text-dim);
+  font-size: 10px;
+  border-radius: 4px;
+  padding: 1px 4px;
+  cursor: pointer;
+}
+.rack-controls button:hover { color: var(--text); }
+
+.remove-btn {
+  position: absolute;
+  top: -7px; right: -7px;
+  width: 16px; height: 16px;
+  border-radius: 50%;
+  background: #7a2a2a;
+  color: #fff;
+  border: 1px solid #0006;
+  font-size: 10px;
+  line-height: 1;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
+}
+
+.rack-empty-hint {
+  color: var(--text-dim);
+  font-size: 12px;
+  align-self: center;
+  opacity: 0.6;
+}
+
+/* ---------- Pool / table ---------- */
+
+#poolZone {
+  flex: 1;
+  min-height: 0;
+  position: relative;
+  background: var(--bg-pool);
+  overflow: hidden;
+}
+
+#pool {
+  position: absolute;
+  inset: 0;
+  /* #pool fully covers the ground/stone layer beneath it (higher z-index,
+     see below) - without this, its own transparent box would swallow every
+     click meant for a stone, even over the empty space between dice. */
+  pointer-events: none;
+}
+
+.pool-piece {
+  position: absolute;
+  cursor: pointer;
+  pointer-events: auto;
+}
+
+/* Tiles */
+
+.tile-piece {
+  width: calc(58px * var(--piece-scale));
+  height: calc(58px * var(--piece-scale));
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(22px * var(--piece-scale));
+  font-weight: 700;
+  color: #fff;
+  box-shadow: 0 5px 10px rgba(0,0,0,0.45), 0 2px 0 rgba(255,255,255,0.08) inset;
+  border: 1px solid rgba(0,0,0,0.35);
+  transition: transform .12s, box-shadow .12s;
+}
+.tile-piece:hover { box-shadow: 0 7px 14px rgba(0,0,0,0.55), 0 0 0 2px var(--accent); }
+
+/* Dominoes */
+
+.domino-piece {
+  width: calc(100px * var(--piece-scale));
+  height: calc(50px * var(--piece-scale));
+  display: flex;
+  border-radius: 8px;
+  box-shadow: 0 6px 12px rgba(0,0,0,0.55);
+  border: 1px solid rgba(0,0,0,0.5);
+  transition: transform .12s, box-shadow .12s;
+}
+.domino-piece:hover { box-shadow: 0 8px 16px rgba(0,0,0,0.65), 0 0 0 2px var(--accent); }
+.domino-half {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(18px * var(--piece-scale));
+  font-weight: 700;
+  color: #fff;
+}
+.domino-half:hover { filter: brightness(1.3); outline: 2px solid var(--accent); outline-offset: -2px; }
+.domino-half:first-child { border-right: 1px dashed rgba(0,0,0,0.5); border-radius: 8px 0 0 8px; }
+.domino-half:last-child { border-radius: 0 8px 8px 0; }
+
+/* Dice (3D) */
+
+.die-outer {
+  width: calc(64px * var(--piece-scale));
+  height: calc(64px * var(--piece-scale));
+  perspective: 400px;
+}
+.die-rotator {
+  width: 100%;
+  height: 100%;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: transform .9s cubic-bezier(.34,1.56,.64,1);
+}
+.die-face {
+  position: absolute;
+  width: calc(64px * var(--piece-scale));
+  height: calc(64px * var(--piece-scale));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: calc(20px * var(--piece-scale));
+  font-weight: 700;
+  color: #fff;
+  border: 1px solid rgba(0,0,0,0.45);
+  border-radius: 6px;
+  background: linear-gradient(160deg, var(--consonant-face), var(--consonant));
+  backface-visibility: hidden;
+}
+.die-face.vowel { background: linear-gradient(160deg, var(--vowel-face), var(--vowel)); }
+.die-face.bigram { background: linear-gradient(160deg, var(--bigram-face), var(--bigram)); font-size: calc(16px * var(--piece-scale)); }
+.die-face-right  { transform: rotateY(90deg)  translateZ(calc(32px * var(--piece-scale))); }
+.die-face-left   { transform: rotateY(-90deg) translateZ(calc(32px * var(--piece-scale))); }
+.die-face-top    { transform: rotateX(90deg)  translateZ(calc(32px * var(--piece-scale))); }
+.die-face-bottom { transform: rotateX(-90deg) translateZ(calc(32px * var(--piece-scale))); }
+.die-face-front  { transform: translateZ(calc(32px * var(--piece-scale))); }
+.die-face-back   { transform: rotateY(180deg) translateZ(calc(32px * var(--piece-scale))); }
+
+.die-face:hover {
+  filter: brightness(1.3);
+  outline: 2px solid var(--accent);
+  outline-offset: -2px;
+}
+
+@keyframes suggestPulse {
+  0%, 100% { filter: sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.15) drop-shadow(0 0 6px #ffe066); }
+  50%      { filter: sepia(1) saturate(6) hue-rotate(-15deg) brightness(1.6) drop-shadow(0 0 12px #ffe066); }
+}
+.suggested {
+  animation: suggestPulse 1s ease-in-out infinite;
+}
+
+.die-face.claimed {
+  filter: grayscale(0.7) brightness(0.55);
+  cursor: default;
+}
+.die-face.claimed::after {
+  content: "✓";
+  position: absolute;
+  top: 2px; right: 4px;
+  font-size: 11px;
+  color: #bffcd2;
+}
+.die-face.claimed:hover { filter: grayscale(0.7) brightness(0.55); outline: none; }
+
+.die-outer.settling .die-rotator { transition: transform 1.1s cubic-bezier(.22,1.6,.4,1); }
+
+/* Swoop clone */
+
+.swoop-clone {
+  position: fixed;
+  z-index: 500;
+  pointer-events: none;
+  transition: transform .55s cubic-bezier(.3,.9,.25,1.2), opacity .55s;
+}
+
+/* ---------- Close words panel ---------- */
+
+#closeWordsPanel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 280px;
+  background: var(--panel);
+  border-left: 1px solid var(--panel-border);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  padding: 14px;
+  transform: translateX(0);
+  transition: transform .25s ease;
+  box-shadow: -8px 0 24px rgba(0,0,0,0.4);
+}
+#closeWordsPanel.hidden { transform: translateX(100%); pointer-events: none; }
+
+.panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 8px;
+}
+.panel-header h3 { margin: 0; font-size: 15px; color: var(--accent); }
+#closePanelBtn {
+  background: transparent; border: none; color: var(--text-dim);
+  font-size: 16px; cursor: pointer; padding: 2px 6px;
+}
+
+#closeWordsMeta { font-size: 12px; color: var(--text-dim); margin-bottom: 10px; }
+
+#closeWordsList {
+  list-style: none;
+  margin: 0; padding: 0;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+#closeWordsList li {
+  background: #141a26;
+  border: 1px solid var(--panel-border);
+  border-radius: 6px;
+  padding: 8px 10px;
+  font-size: 13px;
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+}
+#closeWordsList li .dist0 { color: var(--match); font-weight: 700; }
+#closeWordsList li .dist1 { color: var(--close); }
+#closeWordsList li .distN { color: var(--text-dim); }
+#closeWordsList .word-form { color: var(--text-dim); font-size: 11px; }
+
+/* ---------- Dictionary ("real word") reel ---------- */
+
+#dictWordsReel {
+  flex: none;
+  width: 190px;
+  background: #141a26;
+  border: 1px solid var(--dict, #6a7fd1);
+  border-radius: 8px;
+  padding: 6px 8px;
+}
+#dictWordsReel.hidden { display: none; }
+.reel-title.dict { color: #8ea0ff; }
+#dictWordsReelList {
+  max-height: 76px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+#dictWordsReelList .reel-row button {
+  background: linear-gradient(160deg, #a6b4ff, #6a7fd1);
+  color: #10122a;
+}
+
+/* ================================================================
+   Game mode: goblin arena, cobblestone ground, cantrips
+   ================================================================ */
+
+/* The goblin's HP bar, the player's HP bar, and the reset button live in a
+   compact strip at the LEFT of the rack row - the big picture and the big
+   timer live in the game-piece area instead (see .monster-backdrop /
+   .big-timer below). Standalone box, not overlaid on the dice/pieces, so
+   nothing here needs pointer-events pass-through tricks. */
+.battle-panel.hidden { display: none; }
+.battle-panel {
+  flex: none;
+  width: 336px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  background: #10131a;
+  border: 1px solid var(--panel-border);
+  border-radius: 8px;
+  padding: 6px;
+}
+
+.hp-bar-wrap { width: 100%; }
+.hp-bar-wrap.player-hp { position: relative; } /* scopes its own fx-layer to just this row */
+
+.hp-label {
+  font-size: 14px;
+  font-weight: 700;
+  color: var(--text-dim);
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 2px;
+}
+.hp-bar-track {
+  height: 13px;
+  border-radius: 7px;
+  background: #1a1d24;
+  border: 1px solid var(--panel-border);
+  overflow: hidden;
+}
+.hp-bar-fill {
+  height: 100%;
+  transition: width .3s ease;
+}
+.hp-bar-fill.goblin-fill { background: linear-gradient(90deg, #6fbf4a, #b5442e); }
+.hp-bar-fill.player-fill { background: linear-gradient(90deg, #4fa8d3, #2a6b5e); }
+
+/* The monster lives large in the BACKGROUND of the game-piece area, taking
+   up the left third of that zone - #pool (the dice/tiles/dominoes) renders
+   after it at a higher z-index, so pieces land in front of him and can
+   partially cover him, same as the merged layout did before, just bigger
+   and off to the side now instead of a horizontal band across the top. */
+.monster-backdrop.hidden { display: none; }
+.monster-backdrop {
+  position: absolute;
+  top: 0; bottom: 0; right: 0;
+  width: 33%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 6%;
+  z-index: 1; /* below #pool (z-index:2) */
+}
+
+/* The wrapper is what actually scales up big (not .goblin itself): the
+   idle/attack/hit keyframes below set their own `transform` on .goblin, so
+   a static scale() on that same element/property would fight them. */
+.monster-scale-wrap {
+  transform: scale(5.2);
+  transform-origin: bottom center;
+  opacity: 0.6;
+}
+
+.goblin {
+  position: relative;
+  width: 90px;
+  height: 100px;
+  transform-origin: bottom center;
+}
+.goblin-body {
+  position: absolute;
+  bottom: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 48px; height: 52px;
+  background: linear-gradient(160deg, #7cc24a, #4f8a2e);
+  border-radius: 45% 45% 50% 50%;
+  border: 2px solid #34591c;
+}
+.goblin-head {
+  position: absolute;
+  bottom: 44px; left: 50%;
+  transform: translateX(-50%);
+  width: 38px; height: 34px;
+  background: linear-gradient(160deg, #8fd35c, #5a9c34);
+  border-radius: 50% 50% 45% 45%;
+  border: 2px solid #34591c;
+}
+.goblin-ear {
+  position: absolute;
+  bottom: 58px;
+  width: 14px; height: 20px;
+  background: #5a9c34;
+  border: 2px solid #34591c;
+}
+.ear-l { left: 8px; border-radius: 60% 10% 60% 10%; transform: rotate(-15deg); }
+.ear-r { right: 8px; border-radius: 10% 60% 10% 60%; transform: rotate(15deg); }
+.goblin-eye {
+  position: absolute;
+  top: 12px;
+  width: 7px; height: 9px;
+  background: #ffe066;
+  border-radius: 50%;
+  box-shadow: 0 0 4px #ffe06699;
+}
+.goblin-eye::after {
+  content: ""; position: absolute; inset: 2px;
+  background: #1a1400; border-radius: 50%;
+}
+.eye-l { left: 7px; }
+.eye-r { right: 7px; }
+.goblin-mouth {
+  position: absolute;
+  bottom: 6px; left: 50%; transform: translateX(-50%);
+  width: 16px; height: 5px;
+  background: #2a1400;
+  border-radius: 0 0 8px 8px;
+}
+.goblin-arm {
+  position: absolute;
+  bottom: 20px;
+  width: 10px; height: 26px;
+  background: #5a9c34;
+  border: 2px solid #34591c;
+  border-radius: 6px;
+  transform-origin: top center;
+}
+.arm-l { left: 14px; transform: rotate(12deg); }
+.arm-r { right: 14px; transform: rotate(-12deg); }
+.goblin-weapon {
+  position: absolute;
+  bottom: 18px; left: 50%;
+  transform: translateX(-50%) rotate(20deg);
+  width: 6px; height: 30px;
+  background: linear-gradient(#c9c9c9, #8a8a8a);
+  border-radius: 2px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.5);
+}
+.goblin-weapon::after {
+  content: "";
+  position: absolute;
+  top: -6px; left: -4px;
+  width: 14px; height: 10px;
+  background: #9a5a2a;
+  border-radius: 3px;
+}
+
+/* ---- Monster variety: same anatomy (ears/head/eyes/mouth/body/arms),
+   recolored and reshaped per type via [data-monster], plus a couple of
+   optional bolt-on parts (tail, wings) shown only where they fit. Only a
+   weapon-wielding type (goblin/ogre) shows the weapon; the rest fight with
+   tooth and claw. Cycles on every respawn - see MONSTER_TYPES in app.js. */
+.creature-tail, .creature-wing { display: none; position: absolute; }
+
+.creature-tail {
+  bottom: 4px; left: -6px;
+  width: 34px; height: 8px;
+  background: #5a9c34;
+  border-radius: 40% 60% 60% 40%;
+  transform: rotate(20deg);
+  transform-origin: right center;
+}
+.creature-wing {
+  bottom: 34px;
+  width: 30px; height: 26px;
+  background: #5a9c34;
+  border: 2px solid #34591c;
+  opacity: 0.92;
+}
+.wing-l { left: -16px; border-radius: 70% 20% 60% 30%; transform: rotate(-25deg); }
+.wing-r { right: -16px; border-radius: 20% 70% 30% 60%; transform: rotate(25deg); }
+
+.goblin-weapon { display: none; }
+.goblin[data-monster="goblin"] .goblin-weapon,
+.goblin[data-monster="ogre"] .goblin-weapon { display: block; }
+
+/* snake - long low body, no limbs, tail instead */
+.goblin[data-monster="snake"] .goblin-body { width: 62px; height: 30px; border-radius: 50%; background: linear-gradient(160deg, #8fd35c, #3f7a1e); border-color: #24450f; }
+.goblin[data-monster="snake"] .goblin-head { bottom: 18px; width: 30px; height: 22px; background: linear-gradient(160deg, #8fd35c, #3f7a1e); border-color: #24450f; }
+.goblin[data-monster="snake"] .goblin-ear, .goblin[data-monster="snake"] .goblin-arm { display: none; }
+.goblin[data-monster="snake"] .goblin-mouth { width: 20px; height: 3px; bottom: 3px; }
+.goblin[data-monster="snake"] .creature-tail { display: block; background: #3f7a1e; border: 2px solid #24450f; bottom: -2px; }
+
+/* rat - small, big round ears, long tail */
+.goblin[data-monster="rat"] .goblin-body { width: 40px; height: 40px; background: linear-gradient(160deg, #a9a9b3, #6d6d78); border-color: #3d3d45; }
+.goblin[data-monster="rat"] .goblin-head { width: 30px; height: 26px; background: linear-gradient(160deg, #b5b5bf, #78787f); border-color: #3d3d45; }
+.goblin[data-monster="rat"] .goblin-ear { width: 16px; height: 16px; border-radius: 50%; background: #a9a9b3; border-color: #3d3d45; }
+.goblin[data-monster="rat"] .goblin-arm { display: none; }
+.goblin[data-monster="rat"] .goblin-eye { background: #ff9dc4; box-shadow: 0 0 4px #ff9dc499; }
+.goblin[data-monster="rat"] .creature-tail { display: block; background: #d9a3b0; border: none; width: 40px; height: 4px; }
+
+/* ogre - bigger, brutish, brown/grey */
+.goblin[data-monster="ogre"] .goblin-body { width: 58px; height: 60px; background: linear-gradient(160deg, #9a8a72, #5c5040); border-color: #362e22; }
+.goblin[data-monster="ogre"] .goblin-head { width: 42px; height: 36px; background: linear-gradient(160deg, #a89878, #6b5c46); border-color: #362e22; }
+.goblin[data-monster="ogre"] .goblin-ear { width: 10px; height: 14px; background: #6b5c46; border-color: #362e22; }
+.goblin[data-monster="ogre"] .goblin-arm { width: 13px; height: 30px; background: #6b5c46; border-color: #362e22; }
+.goblin[data-monster="ogre"] .goblin-eye { background: #ff8a4c; box-shadow: 0 0 4px #ff8a4c99; }
+
+/* dragon - scaled, winged, fiery */
+.goblin[data-monster="dragon"] .goblin-body { background: linear-gradient(160deg, #ff8659, #a5230f); border-color: #6b1206; }
+.goblin[data-monster="dragon"] .goblin-head { background: linear-gradient(160deg, #ff9a6e, #b8330f); border-color: #6b1206; }
+.goblin[data-monster="dragon"] .goblin-ear { background: #c9401a; border-color: #6b1206; clip-path: polygon(0 100%, 50% 0, 100% 100%); }
+.goblin[data-monster="dragon"] .goblin-arm { background: #c9401a; border-color: #6b1206; }
+.goblin[data-monster="dragon"] .goblin-eye { background: #ffe066; }
+.goblin[data-monster="dragon"] .creature-tail { display: block; background: #a5230f; border: 2px solid #6b1206; }
+.goblin[data-monster="dragon"] .creature-wing { display: block; background: linear-gradient(160deg, #ff8659, #a5230f); border-color: #6b1206; }
+
+/* lion - golden, maned */
+.goblin[data-monster="lion"] .goblin-body { background: linear-gradient(160deg, #f0c667, #c99433); border-color: #8a641c; }
+.goblin[data-monster="lion"] .goblin-head { background: linear-gradient(160deg, #f5d385, #d4a13f); border-color: #8a641c; box-shadow: 0 0 0 6px #b9822c, 0 0 0 8px #8a641c; }
+.goblin[data-monster="lion"] .goblin-ear { background: #d4a13f; border-color: #8a641c; }
+.goblin[data-monster="lion"] .goblin-arm { background: #d4a13f; border-color: #8a641c; }
+.goblin[data-monster="lion"] .creature-tail { display: block; background: #c99433; border: 2px solid #8a641c; }
+
+/* griffon - beige, beaked, winged */
+.goblin[data-monster="griffon"] .goblin-body { background: linear-gradient(160deg, #e0cfa8, #a68a5c); border-color: #6b5636; }
+.goblin[data-monster="griffon"] .goblin-head { background: linear-gradient(160deg, #e8dcbe, #b39a6c); border-color: #6b5636; }
+.goblin[data-monster="griffon"] .goblin-ear { background: #b39a6c; border-color: #6b5636; }
+.goblin[data-monster="griffon"] .goblin-arm { background: #b39a6c; border-color: #6b5636; }
+.goblin[data-monster="griffon"] .goblin-mouth { background: #d4922a; width: 12px; height: 8px; border-radius: 0 0 6px 6px; }
+.goblin[data-monster="griffon"] .creature-tail { display: block; background: #a68a5c; border: 2px solid #6b5636; }
+.goblin[data-monster="griffon"] .creature-wing { display: block; background: linear-gradient(160deg, #e8dcbe, #a68a5c); border-color: #6b5636; }
+
+/* panther - sleek and dark */
+.goblin[data-monster="panther"] .goblin-body { background: linear-gradient(160deg, #4a3a5c, #17101f); border-color: #0a070d; }
+.goblin[data-monster="panther"] .goblin-head { background: linear-gradient(160deg, #55425e, #1f1424); border-color: #0a070d; }
+.goblin[data-monster="panther"] .goblin-ear { background: #1f1424; border-color: #0a070d; }
+.goblin[data-monster="panther"] .goblin-arm { background: #1f1424; border-color: #0a070d; }
+.goblin[data-monster="panther"] .goblin-eye { background: #baff5e; box-shadow: 0 0 8px #baff5e; }
+.goblin[data-monster="panther"] .creature-tail { display: block; background: #17101f; border: 2px solid #0a070d; }
+
+/* wolf - grey, pointed ears, snout */
+.goblin[data-monster="wolf"] .goblin-body { background: linear-gradient(160deg, #b0b7c2, #626b78); border-color: #3a4048; }
+.goblin[data-monster="wolf"] .goblin-head { background: linear-gradient(160deg, #bcc3cc, #6e7885); border-color: #3a4048; }
+.goblin[data-monster="wolf"] .goblin-ear { background: #6e7885; border-color: #3a4048; clip-path: polygon(0 100%, 50% 0, 100% 100%); }
+.goblin[data-monster="wolf"] .goblin-arm { background: #6e7885; border-color: #3a4048; }
+.goblin[data-monster="wolf"] .goblin-mouth { width: 20px; bottom: 2px; }
+.goblin[data-monster="wolf"] .creature-tail { display: block; background: #838c99; border: 2px solid #3a4048; }
+
+/* Idle cycle: JS rotates between these three classes every few seconds so
+   the goblin keeps doing *something* even when nothing else is happening. */
+@keyframes goblinBob {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-4px); }
+}
+@keyframes goblinSway {
+  0%, 100% { transform: rotate(-2deg); }
+  50% { transform: rotate(2deg); }
+}
+@keyframes goblinCrouch {
+  0%, 100% { transform: translateY(0) scale(1, 1); }
+  50% { transform: translateY(3px) scale(1.03, 0.95); }
+}
+.goblin.idle-a { animation: goblinBob 1.8s ease-in-out infinite; }
+.goblin.idle-b { animation: goblinSway 2.4s ease-in-out infinite; }
+.goblin.idle-c { animation: goblinCrouch 2.1s ease-in-out infinite; }
+
+@keyframes goblinAttack1 {
+  0%   { transform: translateY(0) rotate(0deg); }
+  30%  { transform: translateY(2px) rotate(-6deg); }
+  55%  { transform: translateY(-10px) rotate(10deg) translateX(6px); }
+  75%  { transform: translateY(2px) rotate(-3deg); }
+  100% { transform: translateY(0) rotate(0deg); }
+}
+@keyframes goblinAttack2 {
+  0%   { transform: translateY(0) scale(1); }
+  25%  { transform: translateY(-14px) scale(1.05); }
+  45%  { transform: translateY(6px) scale(1.1, 0.9); }
+  70%  { transform: translateY(-2px) scale(1); }
+  100% { transform: translateY(0) scale(1); }
+}
+.goblin.attack-1 { animation: goblinAttack1 .55s cubic-bezier(.3,.6,.3,1); }
+.goblin.attack-2 { animation: goblinAttack2 .6s cubic-bezier(.3,.6,.3,1); }
+
+@keyframes goblinHit {
+  0%   { transform: translateX(0); filter: brightness(1); }
+  20%  { transform: translateX(-6px); filter: brightness(2.2) saturate(0) sepia(1) hue-rotate(-50deg); }
+  40%  { transform: translateX(5px); }
+  60%  { transform: translateX(-3px); }
+  100% { transform: translateX(0); filter: brightness(1); }
+}
+.goblin.hit { animation: goblinHit .4s ease; }
+
+@keyframes goblinFall {
+  0%   { transform: rotate(0deg) translateY(0); opacity: 1; }
+  100% { transform: rotate(85deg) translateY(10px); opacity: 0.5; }
+}
+.goblin.defeated { animation: goblinFall .6s ease forwards; }
+
+.defeated-msg {
+  position: absolute;
+  top: 50%; left: 50%;
+  transform: translate(-50%, -50%);
+  font-size: 20px;
+  font-weight: 800;
+  color: #ff8f8f;
+  text-shadow: 0 2px 8px rgba(0,0,0,0.8);
+  z-index: 10;
+}
+.defeated-msg.hidden { display: none; }
+
+/* Big floating damage numbers, in the game-piece area itself rather than a
+   small side panel - green for damage the player deals TO the monster, red
+   for damage the monster deals back. */
+.fx-layer-big {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 30;
+  overflow: hidden;
+}
+@keyframes floatDamageBig {
+  0%   { opacity: 0; transform: translate(-50%, 0) scale(0.6); }
+  12%  { opacity: 1; transform: translate(-50%, -14px) scale(1.15); }
+  100% { opacity: 0; transform: translate(-50%, -90px) scale(1); }
+}
+.dmg-float-big {
+  position: absolute;
+  font-size: 34px;
+  font-weight: 900;
+  text-shadow: 0 3px 10px rgba(0,0,0,0.85), 0 0 18px currentColor;
+  animation: floatDamageBig 1.3s ease-out forwards;
+  pointer-events: none;
+}
+.dmg-float-big.to-goblin { color: #5ee06a; }
+.dmg-float-big.to-goblin.spell { color: #7fe0ff; font-size: 42px; }
+.dmg-float-big.to-player { color: #ff5c5c; }
+
+#teaserLayer {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 25;
+}
+@keyframes teaserFade {
+  0%   { opacity: 0; transform: translate(-50%, 0); }
+  12%  { opacity: 1; transform: translate(-50%, 0); }
+  100% { opacity: 0; transform: translate(-50%, -60px); }
+}
+.teaser-word {
+  position: absolute;
+  top: 22%; left: 25%; /* halfway between centered (50%) and the left margin (0%) */
+  font-size: 34px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffe066;
+  background: rgba(20, 26, 38, 0.85);
+  border: 1px solid var(--accent-dim);
+  border-radius: 10px;
+  padding: 8px 20px;
+  animation: teaserFade 2.6s ease-in forwards;
+}
+
+/* ---------- Misty woodland backdrop ---------- */
+
+.forest-backdrop.hidden { display: none; }
+.forest-backdrop {
+  position: absolute;
+  inset: 0;
+  overflow: hidden;
+  background: linear-gradient(to bottom, #232f42 0%, #33465c 38%, #4c6270 68%, #61767c 100%);
+}
+
+.forest-mountains-far,
+.forest-mountains-near {
+  position: absolute;
+  left: -2%; right: -2%; bottom: 0;
+  height: 62%;
+}
+.forest-mountains-far {
+  background: #4e6373;
+  opacity: 0.65;
+  clip-path: polygon(0% 100%, 0% 62%, 9% 48%, 19% 60%, 29% 38%, 40% 56%, 49% 34%, 59% 54%, 69% 40%, 79% 58%, 89% 44%, 100% 60%, 100% 100%);
+}
+.forest-mountains-near {
+  height: 46%;
+  background: #34495a;
+  opacity: 0.85;
+  clip-path: polygon(0% 100%, 0% 74%, 13% 54%, 24% 70%, 35% 48%, 47% 68%, 58% 46%, 70% 66%, 82% 50%, 92% 68%, 100% 58%, 100% 100%);
+}
+
+.forest-trees {
+  position: absolute;
+  left: -2%; right: -2%; bottom: 0;
+  height: 16%;
+  min-height: 60px;
+  background: #0e1712;
+  clip-path: polygon(
+    0% 100%, 0% 65%, 3% 88%, 6% 50%, 9% 82%, 12% 55%, 15% 90%, 18% 52%,
+    21% 86%, 24% 58%, 27% 92%, 30% 50%, 33% 84%, 36% 56%, 39% 90%, 42% 52%,
+    45% 86%, 48% 60%, 51% 92%, 54% 50%, 57% 88%, 60% 56%, 63% 84%, 66% 52%,
+    69% 90%, 72% 58%, 75% 86%, 78% 50%, 81% 92%, 84% 56%, 87% 82%, 90% 52%,
+    93% 90%, 96% 58%, 100% 86%, 100% 100%
+  );
+}
+
+/* Slow-drifting translucent bands standing in for ground mist, layered
+   between the mountains and the trees so it reads as haze sitting in the
+   valley rather than a flat overlay. */
+.forest-mist {
+  position: absolute;
+  left: -20%; right: -20%;
+  height: 70px;
+  background: linear-gradient(to bottom, transparent, rgba(210, 222, 228, 0.16) 45%, rgba(210, 222, 228, 0.22) 55%, transparent);
+  filter: blur(2px);
+}
+.mist-1 { bottom: 8%; animation: mistDrift 34s linear infinite; }
+.mist-2 { bottom: 1%; height: 50px; opacity: 0.8; animation: mistDrift 24s linear infinite reverse; }
+@keyframes mistDrift {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(6%); }
+}
+
+/* ---------- Cobblestone ground ---------- */
+
+#groundLayer.hidden { display: none; }
+#groundLayer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(46px, 1fr));
+  grid-auto-rows: 46px;
+  gap: 3px;
+  padding: 6px;
+  z-index: 0;
+  background:
+    radial-gradient(circle at 30% 30%, rgba(255,255,255,0.03) 0 6px, transparent 7px),
+    radial-gradient(circle at 70% 65%, rgba(255,255,255,0.03) 0 5px, transparent 6px),
+    #23272f;
+  background-size: 70px 70px, 55px 55px, 100% 100%;
+}
+.stone {
+  position: relative;
+  border-radius: 5px;
+  background: linear-gradient(160deg, #3b4048, #262a30);
+  border: 1px solid rgba(0,0,0,0.4);
+  box-shadow: 0 2px 0 rgba(255,255,255,0.04) inset, 0 2px 4px rgba(0,0,0,0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: #fff;
+  cursor: default;
+}
+.stone.has-symbol {
+  cursor: pointer;
+  background: linear-gradient(160deg, var(--consonant-face), var(--consonant));
+}
+.stone.has-symbol.vowel { background: linear-gradient(160deg, var(--vowel-face), var(--vowel)); }
+.stone.has-symbol.bigram { background: linear-gradient(160deg, var(--bigram-face), var(--bigram)); font-size: 11px; }
+.stone.has-symbol:hover { filter: brightness(1.25); outline: 2px solid var(--accent); outline-offset: -2px; }
+
+#pool { z-index: 2; } /* above the goblin (z-index:1), so pieces can land in front of/obscure him */
+
+/* Big countdown, living behind the dice in the game-piece area itself
+   rather than a small side-panel bar - half the zone's width, color
+   shifting from green to red as it drains, flashing under 5s. */
+.big-timer.hidden { display: none; }
+.big-timer {
+  position: absolute;
+  left: 50%;
+  bottom: 14px;
+  width: 50%;
+  transform: translateX(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+.big-timer-track {
+  position: relative;
+  height: 52px;
+  border-radius: 14px;
+  background: #171b22;
+  border: 2px solid rgba(255,255,255,0.1);
+  overflow: hidden;
+}
+/* Flashed once per new monster, alongside its attack window shrinking. */
+@keyframes bigTimerNewMonsterFlash {
+  0%   { box-shadow: 0 0 0 0 rgba(255,230,120,0); filter: brightness(1); }
+  20%  { box-shadow: 0 0 30px 8px rgba(255,230,120,0.85); filter: brightness(1.6); }
+  100% { box-shadow: 0 0 0 0 rgba(255,230,120,0); filter: brightness(1); }
+}
+.big-timer.flash .big-timer-track { animation: bigTimerNewMonsterFlash 0.9s ease-out; }
+.big-timer-fill {
+  height: 100%;
+  width: 100%;
+  background: #3fae5c;
+  opacity: 0.5;
+  transition: width .2s linear, background-color .3s ease;
+}
+.big-timer-label {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 42px;
+  font-weight: 900;
+  color: rgba(255,255,255,0.55);
+  text-shadow: 0 2px 12px rgba(0,0,0,0.6);
+}
+.big-timer.urgent .big-timer-label { animation: bigTimerFlash .5s steps(1, jump-none) infinite; }
+@keyframes bigTimerFlash {
+  0%, 49% { opacity: 1; }
+  50%, 100% { opacity: 0.15; }
+}
+
+/* ---------- Key phrase ---------- */
+
+.key-phrase-bar {
+  position: relative;
+  padding: 6px 16px;
+  min-height: 30px;
+  background: #14181f;
+  border-bottom: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+/* The add-word box lives here (not the header) specifically so it's still
+   reachable once the options bar minimizes in Game mode. */
+.key-phrase-add-word {
+  position: absolute;
+  left: 16px;
+  top: 50%;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.key-phrase-add-word label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--text-dim);
+  white-space: nowrap;
+}
+.key-phrase-add-word .add-word-row { margin: 0; }
+.key-phrase-tiles.hidden { display: none; }
+.key-phrase-tiles {
+  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  justify-content: center;
+}
+.key-phrase-word { display: flex; gap: 2px; }
+.key-phrase-tile {
+  min-width: 30px;
+  height: 36px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: #1c2434;
+  border: 1px solid var(--panel-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+}
+.key-phrase-tile.filled {
+  background: linear-gradient(160deg, #4fd374, var(--match));
+  color: #06210f;
+  border-color: transparent;
+}
+@keyframes keyPhraseCursorBlink {
+  0%, 49% { outline-color: var(--accent); }
+  50%, 100% { outline-color: transparent; }
+}
+.key-phrase-tile.cursor {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+  animation: keyPhraseCursorBlink 1s step-end infinite;
+}
+@keyframes keyPhraseWrongFlash {
+  0%, 100% { background: transparent; }
+  25%, 75% { background: rgba(220, 70, 70, 0.35); }
+}
+.key-phrase-tiles.wrong-flash { animation: keyPhraseWrongFlash .4s ease-in-out; }
+.key-phrase-solved.hidden { display: none; }
+.key-phrase-solved {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  color: #4fd374;
+  background: rgba(8,14,8,0.94);
+  animation: solvedPop 2.4s ease forwards;
+  z-index: 5;
+}
+@keyframes solvedPop {
+  0%   { opacity: 0; transform: scale(0.7); }
+  15%  { opacity: 1; transform: scale(1.08); }
+  25%  { transform: scale(1); }
+  82%  { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+#playerHpWrap {
+  background: rgba(12,14,19,0.7);
+  padding: 4px 10px 6px;
+  border-radius: 8px;
+}
+
+/* ---------- Cantrips ---------- */
+
+#cantripSlots {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 7px;
+  margin-bottom: 10px;
+}
+.cantrip-slot {
+  height: 38px;
+  border-radius: 6px;
+  border: 1px dashed var(--panel-border);
+  background: #141a26;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  position: relative;
+  overflow: hidden;
+}
+.cantrip-slot.filled {
+  border-style: solid;
+  border-color: var(--bigram);
+  color: var(--text);
+  cursor: grab;
+}
+.cantrip-slot.dragover { border-color: var(--accent); background: #26314a; }
+.cantrip-slot .clear-cantrip {
+  position: absolute;
+  top: -1px; right: -1px;
+  width: 13px; height: 13px;
+  background: #7a2a2a;
+  color: #fff;
+  border: none;
+  font-size: 8px;
+  line-height: 1;
+  cursor: pointer;
+  border-radius: 0 5px 0 5px;
+}
+@keyframes cantripGlow {
+  0%, 100% { box-shadow: 0 0 4px 0px var(--accent) inset, 0 0 6px var(--accent); font-size: 13px; }
+  50% { box-shadow: 0 0 10px 2px var(--accent) inset, 0 0 14px var(--accent); font-size: 16px; }
+}
+.cantrip-slot.reachable {
+  border-color: var(--accent);
+  color: var(--accent);
+  animation: cantripGlow 1.4s ease-in-out infinite;
+}
+.spellbook-word[draggable="true"] { cursor: grab; }

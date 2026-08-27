@@ -1,0 +1,230 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Word Roguelike — Piece Prototype</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<div id="app">
+
+  <div id="errorBanner" class="hidden"></div>
+
+  <header id="controls">
+    <div class="control-group mode-group">
+      <label>Mode</label>
+      <div class="segmented" data-target="appMode">
+        <button data-value="sandbox" class="active">🧪 Sandbox</button>
+        <button data-value="game">⚔️ Game</button>
+      </div>
+    </div>
+
+    <button id="controlsToggleBtn" class="controls-toggle-btn mode-group" title="Show/hide the options bar">▾ Options</button>
+
+    <div class="control-group">
+      <label>Piece</label>
+      <div class="segmented" data-target="pieceType">
+        <button data-value="dice" class="active">🎲 Dice</button>
+        <button data-value="domino">🀰 Dominoes</button>
+        <button data-value="tile">▦ Tiles</button>
+      </div>
+    </div>
+
+    <div class="control-group" id="dominoViewGroup" style="display:none;">
+      <label>Pile view</label>
+      <div class="segmented" data-target="dominoView">
+        <button data-value="isometric" class="active">🧊 Isometric</button>
+        <button data-value="topdown">🔲 Top-down</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Letters</label>
+      <div class="segmented" data-target="mode">
+        <button data-value="full" class="active">Full word</button>
+        <button data-value="cons">Consonants</button>
+        <button data-value="consVowel">Vowel+Cons</button>
+      </div>
+    </div>
+
+    <div class="control-group">
+      <label>Frequency</label>
+      <div class="segmented" data-target="freqMode">
+        <button data-value="weighted" class="active">Weighted</button>
+        <button data-value="uniform">Uniform</button>
+        <button data-value="biased">Bias singles vs bigrams</button>
+      </div>
+    </div>
+
+    <div class="control-group slider-group">
+      <label>Bigram mix <span id="mixVal">40%</span></label>
+      <input type="range" id="mixSlider" min="0" max="100" value="40">
+    </div>
+
+    <div class="control-group slider-group">
+      <label>Vowels wild <span id="vowelWildVal">10%</span></label>
+      <input type="range" id="vowelWildSlider" min="0" max="100" value="10">
+    </div>
+
+    <div class="control-group slider-group">
+      <label>Consonants wild <span id="consWildVal">10%</span></label>
+      <input type="range" id="consWildSlider" min="0" max="100" value="10">
+    </div>
+
+    <div class="control-group slider-group">
+      <label>Pieces <span id="countVal">6</span></label>
+      <input type="range" id="countSlider" min="3" max="200" value="6">
+    </div>
+
+    <div class="control-group slider-group">
+      <label>Piece size <span id="sizeVal">165%</span></label>
+      <input type="range" id="sizeSlider" min="50" max="200" value="165" step="5">
+    </div>
+
+    <div class="control-group toggle-group">
+      <label class="switch">
+        <input type="checkbox" id="closeEnoughToggle" checked>
+        <span class="slider-toggle"></span>
+      </label>
+      <label for="closeEnoughToggle" class="switch-label">"Close enough" (≤1 letter off, 5+ letter words)</label>
+    </div>
+
+    <div class="control-group slider-group" id="stoneDensityGroup" style="display:none;">
+      <label>Stone symbols <span id="stoneDensityVal">35%</span></label>
+      <input type="range" id="stoneDensitySlider" min="0" max="100" value="35">
+    </div>
+
+    <div class="control-group slider-group" id="goblinIntervalGroup" style="display:none;">
+      <label>Monster attack every <span id="goblinIntervalVal">24s</span></label>
+      <input type="range" id="goblinIntervalSlider" min="3" max="30" value="24">
+    </div>
+
+    <div class="control-group slider-group" id="basicDmgGroup" style="display:none;">
+      <label>Basic attack dmg <span id="basicDmgVal">1–4</span></label>
+      <input type="range" id="basicDmgMinSlider" min="1" max="20" value="1">
+      <input type="range" id="basicDmgMaxSlider" min="1" max="20" value="4">
+    </div>
+
+    <div class="control-group actions">
+      <button id="throwBtn" class="primary">🎲 Throw Dice</button>
+      <button id="clearRackBtn">Clear Rack</button>
+      <button id="closeWordsBtn">Show Close Words</button>
+      <button id="suggestBtn" title="Find the longest word buildable from what's on the board right now">💡 Suggest</button>
+    </div>
+
+  </header>
+
+  <main>
+    <aside id="gottenSidebar">
+      <div class="panel-header">
+        <h3>📖 Spellbook <span id="gottenCount">(0)</span></h3>
+        <button id="clearSpellbookBtn" title="Clear the learned-words list (doesn't return spent pieces)">🗑️ Clear</button>
+      </div>
+      <ul id="gottenList"></ul>
+
+      <div class="panel-header">
+        <h3>✨ Cantrips</h3>
+      </div>
+      <div id="cantripSlots"></div>
+    </aside>
+
+    <div id="playArea">
+      <div id="keyPhraseBar" class="key-phrase-bar">
+        <div class="key-phrase-add-word">
+          <label>Add legal word</label>
+          <div class="add-word-row">
+            <input type="text" id="addWordInput" placeholder="e.g. sizzle" autocomplete="off" spellcheck="false">
+            <button id="addWordBtn">➕ Add</button>
+          </div>
+          <div id="addWordMsg"></div>
+        </div>
+        <div id="keyPhraseTiles" class="key-phrase-tiles hidden"></div>
+        <div id="keyPhraseSolved" class="key-phrase-solved hidden">✅ SOLVED!</div>
+      </div>
+
+      <section id="rackZone">
+        <div id="rackMain">
+          <div id="rackStatus">Click pieces below to send them up here, then drag to reorder.</div>
+          <div id="matchChoices"></div>
+          <div id="rack"></div>
+        </div>
+        <div id="closeWordsReel" class="hidden">
+          <div class="reel-title">1-off words</div>
+          <div id="closeWordsReelList"></div>
+        </div>
+        <div id="dictWordsReel" class="hidden">
+          <div class="reel-title dict">Real words (not spells)</div>
+          <div id="dictWordsReelList"></div>
+        </div>
+
+        <div id="battlePanel" class="battle-panel hidden">
+          <div class="hp-bar-wrap goblin-hp">
+            <div class="hp-label">🧌 <span id="monsterName">Goblin</span> <span id="goblinHpText">50/50</span></div>
+            <div class="hp-bar-track"><div id="goblinHpFill" class="hp-bar-fill goblin-fill"></div></div>
+          </div>
+          <div class="hp-bar-wrap player-hp" id="playerHpWrap">
+            <div class="hp-label">🙂 You <span id="playerHpText">100/100</span></div>
+            <div class="hp-bar-track"><div id="playerHpFill" class="hp-bar-fill player-fill"></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section id="poolZone">
+        <div id="forestBackdrop" class="forest-backdrop hidden">
+          <div class="forest-mountains-far"></div>
+          <div class="forest-mountains-near"></div>
+          <div class="forest-mist mist-1"></div>
+          <div class="forest-trees"></div>
+          <div class="forest-mist mist-2"></div>
+        </div>
+
+        <div id="groundLayer" class="hidden"></div>
+
+        <div id="monsterBackdrop" class="monster-backdrop hidden">
+          <div class="monster-scale-wrap">
+            <div id="goblin" class="goblin idle-a" data-monster="goblin">
+              <div class="creature-tail"></div>
+              <div class="creature-wing wing-l"></div>
+              <div class="creature-wing wing-r"></div>
+              <div class="goblin-ear ear-l"></div>
+              <div class="goblin-ear ear-r"></div>
+              <div class="goblin-head">
+                <div class="goblin-eye eye-l"></div>
+                <div class="goblin-eye eye-r"></div>
+                <div class="goblin-mouth"></div>
+              </div>
+              <div class="goblin-body"></div>
+              <div class="goblin-arm arm-l"></div>
+              <div class="goblin-arm arm-r"><div class="goblin-weapon"></div></div>
+            </div>
+          </div>
+          <div id="goblinDefeatedMsg" class="defeated-msg hidden">💀 Defeated!</div>
+        </div>
+
+        <div id="bigTimerWrap" class="big-timer hidden">
+          <div class="big-timer-track"><div id="bigTimerFill" class="big-timer-fill"></div></div>
+          <div class="big-timer-label" id="bigTimerText">8</div>
+        </div>
+
+        <div id="pool"></div>
+        <div id="goblinFxLayer" class="fx-layer-big"></div>
+        <div id="playerFxLayer" class="fx-layer-big"></div>
+        <div id="teaserLayer"></div>
+      </section>
+    </div>
+  </main>
+
+  <aside id="closeWordsPanel" class="hidden">
+    <div class="panel-header">
+      <h3>Close words</h3>
+      <button id="closePanelBtn">✕</button>
+    </div>
+    <div id="closeWordsMeta"></div>
+    <ul id="closeWordsList"></ul>
+  </aside>
+
+</div>
+<script src="data.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
